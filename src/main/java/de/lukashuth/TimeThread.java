@@ -20,6 +20,12 @@ public class TimeThread extends Thread {
     public void run() {
         while (true) {
             try {
+                if(Main.game_over) {
+                    break;
+                }
+                if (this.MainWindow.getStartTime.get() == 0) {
+                    this.MainWindow.setStartTime(System.currentTimeMillis());
+                }
                 long time = System.currentTimeMillis() - this.MainWindow.getStartTime.get();
                 MainWindow.getTime_label.get().setText(this.formatTime(time/ 1000));
                 Thread.sleep(1000 - time%1000);

@@ -36,6 +36,7 @@ public class MainWindow {
     private JPanel r10;
     private JPanel r11;
     private JPanel r12;
+    private JLabel status_label;
     private final JPanel[] rows = {r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12};
     private JTable table1;
     public JLabelGetter getRemaining_label = () -> this.remaining_label;
@@ -44,6 +45,7 @@ public class MainWindow {
     public JPanelGetter getGrid_panel = () -> this.grid_panel;
     public JPanelGetter getContainer = () -> this.container;
     public JTableGetter getTable1 = () -> this.table1;
+    public JLabelGetter getStatus_label = () -> this.status_label;
     public LongGetter getStartTime = () -> this.startTime;
 
     public MainWindow() {
