@@ -35,6 +35,9 @@ public class Field {
     public boolean isMine() {
         return isMine;
     }
+    public boolean isNotMine() {
+        return !isMine;
+    }
     public void setMine(boolean mine) {
         isMine = mine;
     }

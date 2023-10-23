@@ -8,6 +8,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.stream.Stream;
 
 public class Main {
     private static final int ROWS = 12;
@@ -73,14 +74,9 @@ public class Main {
         }
     }
     private static void generateNumbersForGrid() {
-        for(final Field[] row : grid) {
-            for(final Field f : row) {
-                if(f.isMine()) {
-                    for(Field neighbor : getNeighbors(f)) {
-                        if(!neighbor.isMine())
-                            neighbor.setNumber(neighbor.getNumber()+1);
-                    }
-                }
+        for(Field f : Stream.of(grid).flatMap(Stream::of).filter(Field::isMine).toList()) {
+            for(Field neighbor : getNeighbors(f).stream().filter(Field::isNotMine).toList()) {
+                neighbor.setNumber(neighbor.getNumber()+1);
             }
         }
     }
@@ -115,63 +111,7 @@ public class Main {
                         if(game_over) return;
                         Field f = grid[x][y];
                         final JPanel panel = (JPanel) e.getSource();
-                        if(e.getButton() == MouseEvent.BUTTON3) {
-                            if(f.isFlagged()) {
-                                f.unflag();
-                                found_mines--;
-                                ((JLabel)panel.getComponents()[0]).setText(" ");
-                                panel.setBackground(Color.WHITE);
-                            } else if(!f.isOpened()) {
-                                ((JLabel)panel.getComponents()[0]).setText("F");
-                                panel.setBackground(Color.RED);
-                                f.flag();
-                                found_mines++;
-                            }
-                            mainWindow.getRemaining_label.get().setText((MINES-found_mines)+"");
-                            winIfAllAreFilled(mainWindow);
-                            return;
-                        }
-                        if(f.isFlagged()) return;
-                        if(f.isMine()) {
-                            mainWindow.getStatus_label.get().setText("Game Over");
-                            game_over = true;
-                            for(Field[] row : grid) {
-                                for(Field f1 : row) {
-                                    if(f1.isMine()) {
-                                        mainWindow.getRows()[f1.getPositionX()].getComponents()[f1.getPositionY()].setBackground(Color.RED);
-                                    }
-                                }
-                            }
-                        } else if(!f.isOpened()) {
-                            grid[x][y].open();
-                            // System.out.println(grid[x][y].getNumber());
-                            if(grid[x][y].getNumber() == 0) {
-                                panel.setBackground(Color.LIGHT_GRAY);
-                                colorNeighboringZeros(x, y, mainWindow);
-                            } else {
-                                ((JLabel)panel.getComponents()[0]).setText(grid[x][y].getNumber()+"");
-                                panel.setBackground(Color.GRAY);
-                            }
-                            winIfAllAreFilled(mainWindow);
-                        } else {
-                            ArrayList<Field> neighbors = getNeighbors(f);
-                            if(neighbors.stream().filter(Field::isFlagged).count() == f.getNumber()) {
-                                for(Field neighbor : neighbors) {
-                                    if(!neighbor.isOpened() && !neighbor.isFlagged()) {
-                                        neighbor.open();
-                                        if(neighbor.isMine()) {
-                                            mainWindow.getStatus_label.get().setText("Game Over");
-                                            game_over = true;
-                                        }
-                                        if(neighbor.getNumber() == 0)
-                                            colorNeighboringZeros(neighbor.getPositionX(), neighbor.getPositionY(), mainWindow);
-                                        else
-                                            colorField(neighbor, mainWindow);
-                                    }
-                                }
-                            }
-                            winIfAllAreFilled(mainWindow);
-                        }
+                        handleMouseClickOnPanel(e, f, panel, mainWindow, x, y);
                     }
                 });
                 panel.setPreferredSize(new Dimension(50, 50));
@@ -180,6 +120,79 @@ public class Main {
             }
             row_count++;
         }
+    }
+
+    private static void handleMouseClickOnPanel(MouseEvent e, Field f, JPanel panel, @NotNull MainWindow mainWindow, int x, int y) {
+        if(e.getButton() == MouseEvent.BUTTON3) {
+            handleRightClick(f, panel, mainWindow);
+            return;
+        }
+        if(f.isFlagged()) return;
+        if(f.isMine()) {
+            handleClickOnMine(mainWindow);
+            return;
+        } else if(!f.isOpened()) {
+            handleNotOpenedField(panel, mainWindow, x, y);
+        } else {
+            handleOpenedField(f, mainWindow);
+        }
+        winIfAllAreFilled(mainWindow);
+    }
+
+    private static void handleOpenedField(Field f, @NotNull MainWindow mainWindow) {
+        ArrayList<Field> neighbors = getNeighbors(f);
+        if(neighbors.stream().filter(Field::isFlagged).count() == f.getNumber()) {
+            for(Field neighbor : neighbors) {
+                if(!neighbor.isOpened() && !neighbor.isFlagged()) {
+                    neighbor.open();
+                    if(neighbor.isMine()) {
+                        mainWindow.getStatus_label.get().setText("Game Over");
+                        game_over = true;
+                    }
+                    if(neighbor.getNumber() == 0)
+                        colorNeighboringZeros(neighbor.getPositionX(), neighbor.getPositionY(), mainWindow);
+                    else
+                        colorField(neighbor, mainWindow);
+                }
+            }
+        }
+    }
+
+    private static void handleNotOpenedField(JPanel panel, @NotNull MainWindow mainWindow, int x, int y) {
+        grid[x][y].open();
+        // System.out.println(grid[x][y].getNumber());
+        if(grid[x][y].getNumber() == 0) {
+            panel.setBackground(Color.LIGHT_GRAY);
+            colorNeighboringZeros(x, y, mainWindow);
+        } else {
+            ((JLabel) panel.getComponents()[0]).setText(grid[x][y].getNumber()+"");
+            panel.setBackground(Color.GRAY);
+        }
+    }
+
+    private static void handleClickOnMine(@NotNull MainWindow mainWindow) {
+        mainWindow.getStatus_label.get().setText("Game Over");
+        game_over = true;
+        System.out.println();
+        for(Field f1 : Stream.of(grid).flatMap(Stream::of).filter(Field::isMine).toList()) {
+            mainWindow.getRows()[f1.getPositionX()].getComponents()[f1.getPositionY()].setBackground(Color.RED);
+        }
+    }
+
+    private static void handleRightClick(Field f, JPanel panel, @NotNull MainWindow mainWindow) {
+        if(f.isFlagged()) {
+            f.unflag();
+            found_mines--;
+            ((JLabel) panel.getComponents()[0]).setText(" ");
+            panel.setBackground(Color.WHITE);
+        } else if(!f.isOpened()) {
+            ((JLabel) panel.getComponents()[0]).setText("F");
+            panel.setBackground(Color.RED);
+            f.flag();
+            found_mines++;
+        }
+        mainWindow.getRemaining_label.get().setText((MINES-found_mines)+"");
+        winIfAllAreFilled(mainWindow);
     }
 
     private static boolean winIfAllAreFilled(MainWindow mainWindow) {
@@ -246,8 +259,7 @@ public class Main {
         for(Field neighbor : getNeighbors(f)) {
             if(!visited.contains(neighbor)) {
                 visited.add(neighbor);
-                if(neighbor.getNumber() == 0)
-                    getNeighborsWithZero(neighbor, visited);
+                if(neighbor.isZero()) getNeighborsWithZero(neighbor, visited);
             }
         }
     }
