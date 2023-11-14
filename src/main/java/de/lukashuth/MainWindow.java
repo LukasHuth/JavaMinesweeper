@@ -1,8 +1,11 @@
 package de.lukashuth;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 interface JTableGetter {
     JTable get();
@@ -24,20 +27,9 @@ public class MainWindow {
     private JPanel grid_panel;
     private JLabel time_label;
     private JLabel remaining_label;
-    public JPanel r01;
-    private JPanel r02;
-    private JPanel r03;
-    private JPanel r04;
-    private JPanel r05;
-    private JPanel r06;
-    private JPanel r07;
-    private JPanel r08;
-    private JPanel r09;
-    private JPanel r10;
-    private JPanel r11;
-    private JPanel r12;
     private JLabel status_label;
-    private final JPanel[] rows = {r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12};
+    // private JPanel[] rows = {r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12};
+    private ArrayList<JPanel> rows = new ArrayList<>();
     private JTable table1;
     public JLabelGetter getRemaining_label = () -> this.remaining_label;
     public JLabelGetter getTime_label = () -> this.time_label;
@@ -48,10 +40,17 @@ public class MainWindow {
     public JLabelGetter getStatus_label = () -> this.status_label;
     public LongGetter getStartTime = () -> this.startTime;
 
-    public MainWindow() {
+    public MainWindow(int size) {
+        this.rows = new ArrayList<>();
+        grid_panel.setLayout(new GridLayout(size, 1));
+        for(int i = 0; i < size; i++) {
+            JPanel row = new JPanel();
+            rows.add(row);
+            this.grid_panel.add(row);
+        }
     }
 
-    public JPanel[] getRows() {
+    public ArrayList<JPanel> getRows() {
         return rows;
     }
     public void setStartTime(long startTime) {

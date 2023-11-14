@@ -11,17 +11,31 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 public class Main {
-    private static final int ROWS = 12;
-    static final int COLUMNS = 12;
-    static final int MINES = 20;
+    // private int ROWS;
+    // static int COLUMNS = 15;
+    static int MINES = 20;
     private static int found_mines = 0;
     static boolean game_over = false;
     private static Thread timeThread;
-    private static final Field[][] grid = new Field[ROWS][COLUMNS];
+    private static Field[][] grid;
     public static void main(String[] args) {
+        int size = 12;
+        if(args.length > 0) {
+            if(!args[0].matches("\\d+")) {
+                System.out.println("Size must be a number");
+                System.exit(1);
+            }
+            if(Integer.parseInt(args[0]) < 5) {
+                System.out.println("Size must be at least 5");
+                System.exit(2);
+            }
+            size = Integer.parseInt(args[0]);
+        }
+        MINES = size + size/2;
+        grid = new Field[size][size];
+        MainWindow mainWindow = new MainWindow(size);
         JFrame frame = new JFrame("Minesweeper");
         frame.setResizable(false);
-        MainWindow mainWindow = new MainWindow();
         setupFrame(frame, mainWindow);
     }
     private static void setupFrame(@NotNull JFrame frame, @NotNull MainWindow mainWindow) {
@@ -36,16 +50,16 @@ public class Main {
         frame.pack();
         frame.setVisible(true);
     }
-    private static void resetGrid() {
-        fillGrid();
-        shuffleGrid();
+    private static void resetGrid(int size) {
+        fillGrid(size);
+        shuffleGrid(size);
         generateNumbersForGrid();
-        printGrid();
+        // printGrid();
     }
-    private static void fillGrid() {
+    private static void fillGrid(int size) {
         Field.MINES = 0;
-        for(int x = 0; x < ROWS; x++) {
-            for(int y = 0; y < COLUMNS; y++) {
+        for(int x = 0; x < size; x++) {
+            for(int y = 0; y < size; y++) {
                 Field f = new Field(x, y);
                 grid[x][y] = f;
             }
@@ -59,12 +73,12 @@ public class Main {
             System.out.println();
         }
     }
-    private static void shuffleGrid() {
+    private static void shuffleGrid(int size) {
         Random r = new Random();
         r.setSeed(System.currentTimeMillis());
         for(int i = 0; i < 1000; i++) {
-            final int x_1 = r.nextInt(ROWS), y_1 = r.nextInt(COLUMNS);
-            final int x_2 = r.nextInt(ROWS), y_2 = r.nextInt(COLUMNS);
+            final int x_1 = r.nextInt(size), y_1 = r.nextInt(size);
+            final int x_2 = r.nextInt(size), y_2 = r.nextInt(size);
             final Field f_1 = grid[x_1][y_1];
             final Field f_2 = grid[x_2][y_2];
             f_1.setPosition(x_2, y_2);
@@ -75,19 +89,19 @@ public class Main {
     }
     private static void generateNumbersForGrid() {
         for(Field f : Stream.of(grid).flatMap(Stream::of).filter(Field::isMine).toList()) {
-            for(Field neighbor : getNeighbors(f).stream().filter(Field::isNotMine).toList()) {
+            for(Field neighbor : getNeighbors(grid.length,f).stream().filter(Field::isNotMine).toList()) {
                 neighbor.setNumber(neighbor.getNumber()+1);
             }
         }
     }
     private static void initializeGrid(@NotNull MainWindow mainWindow) {
-        resetGrid();
+        resetGrid(mainWindow.getRows().size());
         insertStatusClickHandler(mainWindow);
         insertFields(mainWindow);
     }
     private static void resetFields(@NotNull MainWindow mainWindow) {
         for(final JPanel row : mainWindow.getRows()) {
-            for(int i = 0; i < ROWS; i++) {
+            for(int i = 0; i < mainWindow.getRows().size(); i++) {
                 final JPanel panel = (JPanel) row.getComponents()[i];
                 panel.setBackground(Color.WHITE);
                 ((JLabel)panel.getComponents()[0]).setText(" ");
@@ -98,8 +112,8 @@ public class Main {
     private static void insertFields(@NotNull MainWindow mainWindow) {
         int row_count = 0;
         for(final JPanel row : mainWindow.getRows()) {
-            row.setLayout(new GridLayout(1, ROWS));
-            for(int i = 0; i < ROWS; i++) {
+            row.setLayout(new GridLayout(1, mainWindow.getRows().size()));
+            for(int i = 0; i < mainWindow.getRows().size(); i++) {
                 final JPanel panel = new JPanel();
                 panel.add(new JLabel(" "));
                 final int x = row_count;
@@ -140,7 +154,7 @@ public class Main {
     }
 
     private static void handleOpenedField(Field f, @NotNull MainWindow mainWindow) {
-        ArrayList<Field> neighbors = getNeighbors(f);
+        ArrayList<Field> neighbors = getNeighbors(mainWindow.getRows().size(), f);
         if(neighbors.stream().filter(Field::isFlagged).count() == f.getNumber()) {
             for(Field neighbor : neighbors) {
                 if(!neighbor.isOpened() && !neighbor.isFlagged()) {
@@ -175,7 +189,7 @@ public class Main {
         game_over = true;
         System.out.println();
         for(Field f1 : Stream.of(grid).flatMap(Stream::of).filter(Field::isMine).toList()) {
-            mainWindow.getRows()[f1.getPositionX()].getComponents()[f1.getPositionY()].setBackground(Color.RED);
+            mainWindow.getRows().get(f1.getPositionX()).getComponents()[f1.getPositionY()].setBackground(Color.RED);
         }
     }
 
@@ -226,7 +240,7 @@ public class Main {
                 mainWindow.startTime = 0;
                 timeThread = new TimeThread(mainWindow);
                 timeThread.start();
-                resetGrid();
+                resetGrid(mainWindow.getRows().size());
                 resetFields(mainWindow);
             }
         });
@@ -235,7 +249,7 @@ public class Main {
     private static void colorNeighboringZeros(int x, int y, MainWindow mainWindow) {
         final ArrayList<Field> visited = new ArrayList<>();
         visited.add(grid[x][y]);
-        getNeighborsWithZero(grid[x][y], visited);
+        getNeighborsWithZero(mainWindow.getRows().size(), grid[x][y], visited);
         for(Field neighbor : visited) {
             neighbor.open();
             colorField(neighbor, mainWindow);
@@ -244,26 +258,26 @@ public class Main {
 
     private static void colorField(Field neighbor, MainWindow mainWindow) {
         if(neighbor.isMine())
-            mainWindow.getRows()[neighbor.getPositionX()].getComponents()[neighbor.getPositionY()].setBackground(Color.RED);
+            mainWindow.getRows().get(neighbor.getPositionX()).getComponents()[neighbor.getPositionY()].setBackground(Color.RED);
         else if(neighbor.getNumber() == 0)
-            mainWindow.getRows()[neighbor.getPositionX()].getComponents()[neighbor.getPositionY()].setBackground(Color.LIGHT_GRAY);
+            mainWindow.getRows().get(neighbor.getPositionX()).getComponents()[neighbor.getPositionY()].setBackground(Color.LIGHT_GRAY);
         else {
-            mainWindow.getRows()[neighbor.getPositionX()].getComponents()[neighbor.getPositionY()].setBackground(Color.GRAY);
-            JPanel neighbor_panel = (JPanel) mainWindow.getRows()[neighbor.getPositionX()].getComponents()[neighbor.getPositionY()];
+            mainWindow.getRows().get(neighbor.getPositionX()).getComponents()[neighbor.getPositionY()].setBackground(Color.GRAY);
+            JPanel neighbor_panel = (JPanel) mainWindow.getRows().get(neighbor.getPositionX()).getComponents()[neighbor.getPositionY()];
             JLabel neighbor_label = (JLabel)neighbor_panel.getComponents()[0];
             neighbor_label.setText(grid[neighbor.getPositionX()][neighbor.getPositionY()].getNumber()+"");
         }
     }
 
-    private static void getNeighborsWithZero(Field f, ArrayList<Field> visited) {
-        for(Field neighbor : getNeighbors(f)) {
+    private static void getNeighborsWithZero(int size, Field f, ArrayList<Field> visited) {
+        for(Field neighbor : getNeighbors(size, f)) {
             if(!visited.contains(neighbor)) {
                 visited.add(neighbor);
-                if(neighbor.isZero()) getNeighborsWithZero(neighbor, visited);
+                if(neighbor.isZero()) getNeighborsWithZero(size, neighbor, visited);
             }
         }
     }
-    private static ArrayList<Field> getNeighbors(Field f) {
+    private static ArrayList<Field> getNeighbors(int size, Field f) {
         ArrayList<Field> neighbors = new ArrayList<>();
         final int x = f.getPositionX();
         final int y = f.getPositionY();
@@ -272,23 +286,23 @@ public class Main {
             if(y > 0) {
                 neighbors.add(grid[x-1][y-1]);
             }
-            if(y < COLUMNS-1) {
+            if(y < size-1) {
                 neighbors.add(grid[x-1][y+1]);
             }
         }
         if(y > 0) {
             neighbors.add(grid[x][y-1]);
-            if(x < ROWS-1) {
+            if(x < size-1) {
                 neighbors.add(grid[x+1][y-1]);
             }
         }
-        if(x < ROWS-1) {
+        if(x < size-1) {
             neighbors.add(grid[x+1][y]);
-            if(y < COLUMNS-1) {
+            if(y < size-1) {
                 neighbors.add(grid[x+1][y+1]);
             }
         }
-        if(y < COLUMNS-1) {
+        if(y < size-1) {
             neighbors.add(grid[x][y+1]);
         }
         return neighbors;
