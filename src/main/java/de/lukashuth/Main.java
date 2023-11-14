@@ -1,7 +1,5 @@
 package de.lukashuth;
 
-import org.jetbrains.annotations.NotNull;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -25,8 +23,8 @@ public class Main {
                 System.out.println("Size must be a number");
                 System.exit(1);
             }
-            if(Integer.parseInt(args[0]) < 5) {
-                System.out.println("Size must be at least 5");
+            if(Integer.parseInt(args[0]) < 5 || Integer.parseInt(args[0]) > 20) {
+                System.out.println("Size must be at least 5 and at most 20");
                 System.exit(2);
             }
             size = Integer.parseInt(args[0]);
@@ -38,7 +36,7 @@ public class Main {
         frame.setResizable(false);
         setupFrame(frame, mainWindow);
     }
-    private static void setupFrame(@NotNull JFrame frame, @NotNull MainWindow mainWindow) {
+    private static void setupFrame(JFrame frame, MainWindow mainWindow) {
         timeThread = new TimeThread(mainWindow);
         JPanel container = mainWindow.container;
         mainWindow.getRemaining_label.get().setText((MINES-found_mines)+"");
@@ -94,12 +92,12 @@ public class Main {
             }
         }
     }
-    private static void initializeGrid(@NotNull MainWindow mainWindow) {
+    private static void initializeGrid(MainWindow mainWindow) {
         resetGrid(mainWindow.getRows().size());
         insertStatusClickHandler(mainWindow);
         insertFields(mainWindow);
     }
-    private static void resetFields(@NotNull MainWindow mainWindow) {
+    private static void resetFields(MainWindow mainWindow) {
         for(final JPanel row : mainWindow.getRows()) {
             for(int i = 0; i < mainWindow.getRows().size(); i++) {
                 final JPanel panel = (JPanel) row.getComponents()[i];
@@ -109,7 +107,7 @@ public class Main {
         }
     }
 
-    private static void insertFields(@NotNull MainWindow mainWindow) {
+    private static void insertFields(MainWindow mainWindow) {
         int row_count = 0;
         for(final JPanel row : mainWindow.getRows()) {
             row.setLayout(new GridLayout(1, mainWindow.getRows().size()));
@@ -136,7 +134,7 @@ public class Main {
         }
     }
 
-    private static void handleMouseClickOnPanel(MouseEvent e, Field f, JPanel panel, @NotNull MainWindow mainWindow, int x, int y) {
+    private static void handleMouseClickOnPanel(MouseEvent e, Field f, JPanel panel, MainWindow mainWindow, int x, int y) {
         if(e.getButton() == MouseEvent.BUTTON3) {
             handleRightClick(f, panel, mainWindow);
             return;
@@ -153,7 +151,7 @@ public class Main {
         winIfAllAreFilled(mainWindow);
     }
 
-    private static void handleOpenedField(Field f, @NotNull MainWindow mainWindow) {
+    private static void handleOpenedField(Field f, MainWindow mainWindow) {
         ArrayList<Field> neighbors = getNeighbors(mainWindow.getRows().size(), f);
         if(neighbors.stream().filter(Field::isFlagged).count() == f.getNumber()) {
             for(Field neighbor : neighbors) {
@@ -172,7 +170,7 @@ public class Main {
         }
     }
 
-    private static void handleNotOpenedField(JPanel panel, @NotNull MainWindow mainWindow, int x, int y) {
+    private static void handleNotOpenedField(JPanel panel, MainWindow mainWindow, int x, int y) {
         grid[x][y].open();
         // System.out.println(grid[x][y].getNumber());
         if(grid[x][y].getNumber() == 0) {
@@ -184,7 +182,7 @@ public class Main {
         }
     }
 
-    private static void handleClickOnMine(@NotNull MainWindow mainWindow) {
+    private static void handleClickOnMine(MainWindow mainWindow) {
         mainWindow.getStatus_label.get().setText("Game Over");
         game_over = true;
         System.out.println();
@@ -193,7 +191,7 @@ public class Main {
         }
     }
 
-    private static void handleRightClick(Field f, JPanel panel, @NotNull MainWindow mainWindow) {
+    private static void handleRightClick(Field f, JPanel panel, MainWindow mainWindow) {
         if(f.isFlagged()) {
             f.unflag();
             found_mines--;
