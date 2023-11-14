@@ -14,3 +14,4 @@ run the Main.java file in the src folder in an IDE like IntelliJ
 - To restart the game, click the text "You won!" or "You lost!" at the top of the window
 ## Screenshots
 ![Screenshot 1](https://github.com/LukasHuth/JavaMinesweeper/blob/master/image.png?raw=true)
+![Screenshot 2](https://github.com/LukasHuth/JavaMinesweeper/blob/master/image2.png?raw=true)
