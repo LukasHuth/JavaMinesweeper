@@ -6,7 +6,9 @@
 git clone git@github.com:LukasHuth/JavaMinesweeper.git
 ```
 ### Run the project
-run the Main.java file in the src folder in an IDE like IntelliJ
+run the Main.java file in the src folder in IntelliJ
+this iis needed, because the form builder used doesn't
+has a good native maven support
 ## How to play
 - Left click to reveal a field
 - Right click to flag a field
